@@ -1,37 +1,56 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
+import csv
 import sqlite3
-
-from models.order import Order
-from controllers.SQL_commands import run_SQL_command
-
 
 app = FastAPI()
 
+class Order(BaseModel):
+    name: str
+    creditCard: int
+    product: str
+
 
 @app.get("/")
-async def get_hello_world():
-    return {"Message": "Hello World"}
+async def root():
+    return {"message": "Hello World"}
 
 
-@app.get("/time")
-async def get_time():
-    return {"Time": datetime.now()}
+@app.get("/hello")
+async def hello():
+    return {"message": datetime.now()}
 
 
-@app.get("/order/{order_id}")
-async def get_order(order_id: int):
-    crsr = run_SQL_command('payment.db', f"""SELECT * FROM Checkout WHERE rowid = {order_id}""")
-    order = crsr.fetchall()
-    return {"Order": order}
-
-
-@app.post("/checkout")
-async def checkout_order(order: Order):
+@app.get("/create", status_code=200)
+async def create():
     try:
-        crsr = run_SQL_command('payment.db', f"""INSERT INTO Checkout VALUES ("{order.name}", {order.creditCard}, "{order.product}");""")
-        order_id = crsr.lastrowid
+        with sqlite3.connect('payment.db') as conn:
+            crsr = conn.cursor()
+            crsr.execute("CREATE TABLE checkout (Name TEXT, CreditCard INTEGER, Product TEXT)")
+            conn.commit()
     except sqlite3.OperationalError as e:
+        print(e)
         raise HTTPException(status_code=500, detail="Database error")
-    return {"Order ID": order_id}
+    return {"ok":True}
+
+
+@app.post("/checkout", status_code=200)
+async def checkout(order: Order):
+    ans = []
+    try:
+        with sqlite3.connect('payment.db') as conn:
+            crsr = conn.cursor()
+            crsr.execute(f"""INSERT INTO checkout VALUES ("{order.name}", {order.creditCard}, "{order.product}");""")
+            conn.commit()
+
+            # for debugging
+            crsr.execute("SELECT * FROM checkout")
+            ans = crsr.fetchall()
+            for i in ans:
+                print(i)
+    except sqlite3.OperationalError as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Database error")
+    
+    return {"ok": ans}
