@@ -1,7 +1,7 @@
 import sqlite3
 
 
-def run_SQL_command(database, command):
+def execute_SQL_command(database, command):
     with sqlite3.connect(database) as conn:
         crsr = conn.cursor()
         crsr.execute(command)
