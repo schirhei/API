@@ -1,4 +1,5 @@
 import sqlite3
+from main import db
 
 """
     Payment Database
@@ -11,7 +12,7 @@ import sqlite3
 
 def create_table_checkout():
     try:
-        with sqlite3.connect('payment.db') as conn:
+        with sqlite3.connect(db) as conn:
             crsr = conn.cursor()
             crsr.execute("DROP TABLE IF EXISTS Checkout")
             crsr.execute("CREATE TABLE Checkout (Name TEXT, CreditCard LONG, Product TEXT)")
